@@ -10,6 +10,8 @@ services:
     volumes:
       - ./backend/src:/app/src
     command: npm run start:dev
+    networks:
+      - ft
 
   frontend:
     container_name: frontend
@@ -23,17 +25,25 @@ services:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
     command: npm run dev
+    networks:
+      - ft
 
   db:
     container_name: db
     image: postgres:13-alpine
     environment:
-      POSTGRES_DB: db
+      POSTGRES_DB: database
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: toor
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - ft
+
 volumes:
   pgdata:
+
+networks:
+  ft:

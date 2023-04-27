@@ -18,4 +18,10 @@ stop:
 clean:
 	docker-compose down --rmi all --volumes
 
-.PHONY: build-backend build-frontend build start-dev start-prod stop clean
+re: fclean build
+
+fclean: clean
+	cd backend && rm -rf node_modules dist
+	cd frontend && rm -rf node_modules dist
+
+.PHONY: build-backend build-frontend build start-dev start-prod stop clean re fclean
