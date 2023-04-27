@@ -12,7 +12,7 @@ import { ChatModule } from './chat/chat.module';
     port: 5432,
     username: 'admin',
     password: 'toor',
-    database: 'db',
+    database: 'database',
     entities: ['src/**/*.entity{.ts,.js}'],
     synchronize: true,
   }), ChatModule],
