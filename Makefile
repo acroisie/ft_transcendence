@@ -9,8 +9,8 @@ build: build-backend build-frontend
 start-dev:
 	docker-compose -f docker-compose.yml up --build
 
-# start-prod:
-# 	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+start-prod:
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 stop:
 	docker-compose down

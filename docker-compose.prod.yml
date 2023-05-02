@@ -4,9 +4,9 @@ services:
   backend:
     build:
       context: ./backend
-      target: production
     environment:
       NODE_ENV: production
+    command: npm run start:prod
     ports:
       - "3000:3000"
     depends_on:
@@ -15,11 +15,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: production
     environment:
       NODE_ENV: production
+    command: npm run start
     ports:
-      - "8080:80"
+      - "8080:8080"
 
   db:
     environment:
