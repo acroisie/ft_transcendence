@@ -23,5 +23,6 @@ re: fclean build
 fclean: clean
 	cd backend && rm -rf node_modules dist
 	cd frontend && rm -rf node_modules dist
+	docker system prune -a --volumes
 
 .PHONY: build-backend build-frontend build start-dev start-prod stop clean re fclean

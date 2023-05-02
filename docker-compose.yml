@@ -30,7 +30,7 @@ services:
 
   db:
     container_name: db
-    image: postgres:13-alpine
+    image: postgres:alpine
     environment:
       POSTGRES_DB: database
       POSTGRES_USER: admin
