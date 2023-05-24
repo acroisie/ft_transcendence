@@ -6,14 +6,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Message } from './entities/message.entity';
 
 @Module({
-  imports: [GatewayModule,
+  imports: [
+    GatewayModule,
     TypeOrmModule.forRoot({
-    type: 'sqlite',
-    database: 'db.sqlite',
-    entities: [Message],
-    synchronize: true,
-  }),],
+      type: 'sqlite',
+      database: 'db.sqlite',
+      entities: [Message],
+      synchronize: true,
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

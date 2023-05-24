@@ -7,13 +7,13 @@ export class CreateMessageDto {
   @IsNotEmpty()
   @MaxLength(5)
   username: string;
-  
+
   @Expose()
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
   room: string;
-  
+
   @Expose()
   @IsString()
   @IsNotEmpty()
