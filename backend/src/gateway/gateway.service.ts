@@ -1,65 +1,84 @@
-import { BadRequestException, OnModuleInit } from "@nestjs/common";
+import { OnModuleInit, BadRequestException, Logger } from "@nestjs/common";
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { Repository } from 'typeorm';
 import { Message } from '../entities/message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateMessageDto } from "src/dtos/create-message.dto";
+import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
 
 @WebSocketGateway(3001, { cors: { origin: ['http://localhost:5173'] } })
 
 export class GatewayService implements OnModuleInit {
-	constructor(@InjectRepository(Message) private messageRepository: Repository<Message>,) { }
+  private logger: Logger;
 
-	@WebSocketServer()
-	server: Server;
+  constructor(@InjectRepository(Message) private repo: Repository<Message>) {
+    this.logger = new Logger(GatewayService.name);
+  }
 
-	async onModuleInit() {
-		this.server.on('connection', (socket) => {
-			console.log(socket.id);
-			console.log('Connected');
-		});
-	}
+  @WebSocketServer()
+  io: Server;
 
-	@SubscribeMessage('newMessage')
-	async onNewMessage(@MessageBody() body: CreateMessageDto) {
-		console.log(body); //To delete
+  onModuleInit() {
+    this.logger.log('Gateway initialized');
+  }
 
-		/*Mehd: Pense aux plainToClass 
-		avec le le extreneousfiled à desactive
-		 pour avoir des objets sans champs supplémentaires*/
+  handleConnection(socket: Socket) {
+    this.logger.log('id: ' + socket.id + ' connected');
+  }
 
-		const dto = new CreateMessageDto();
-		dto.username = body.username;
-		dto.room = body.room;
-		dto.content = body.content;
+  handleDisconnect(socket: Socket) {
+    this.logger.log('id: ' + socket.id + ' disconnected');
+  }
 
-		const errors = await validate(dto);
-		if (errors.length > 0) {
-			const errorMessages = errors.map((error) => Object.values(error.constraints));
-			console.log(errorMessages);
-			this.server.emit('errorPopup', {
-				msg: 'Error',
-				content: errorMessages,
-			});
-			return;
-		}
 
-		const message = this.messageRepository.create({
-			room: dto.room,
-			username: dto.username,
-			content: dto.content,
-		});
-		await this.messageRepository.save(message);
+  @SubscribeMessage('newMessage')
+  async onNewMessage(@MessageBody() body: CreateMessageDto) {
+    const dto = plainToClass(CreateMessageDto, body, { excludeExtraneousValues: true });
 
-		// this.server.to(body.room).emit('onMessage', {
-		// 	msg: 'New message',
-		// 	content: body,
-		// });
-		this.server.emit('onMessage', {
-			msg: 'New message',
-			content: body,
-		})
-	}
+    try {
+      await this.validateDto(dto);
+      const message = this.createMessage(dto);
+      await this.repo.save(message);
+      this.emitNewMessageEvent(body);
+    } catch (error) {
+      this.handleValidationError(error);
+    }
+  }
+
+  private async validateDto(dto: CreateMessageDto): Promise<void> {
+    const errors = await validate(dto);
+
+    if (errors.length > 0) {
+      const errorMessages = errors.map((error) => Object.values(error.constraints));
+      throw new BadRequestException(errorMessages);
+    }
+  }
+
+  private createMessage(dto: CreateMessageDto): Message {
+    return this.repo.create({
+      room: dto.room,
+      username: dto.username,
+      content: dto.content,
+    });
+  }
+
+  private emitNewMessageEvent(body: CreateMessageDto): void {
+    this.io.emit('onMessage', {
+      msg: 'New message',
+      content: body.content,
+    });
+  }
+
+  private handleValidationError(error: any): void {
+    if (error! instanceof BadRequestException) {
+      this.io.emit('errorPopup', {
+        msg: 'Error',
+        content: error,
+      });
+    } else {
+      this.logger.error(new BadRequestException('Wrong format'));
+    }
+  }
 }
