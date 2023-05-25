@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { GatewayModule } from './gateway/gateway.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Message } from './entities/message.entity';
+import { Channel } from './entities/channel.entity';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { Message } from './entities/message.entity';
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'db.sqlite',
-      entities: [Message],
+      entities: [Message, Channel],
       synchronize: true,
     }),
   ],
