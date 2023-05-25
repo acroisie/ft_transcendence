@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Channel } from './channel.entity';
 
 @Entity()
 export class Message {
@@ -6,7 +7,10 @@ export class Message {
   id: number;
 
   @Column()
-  room: string;
+  roomId: number;
+
+  @ManyToOne(() => Channel, (channel) => channel.messages)
+  channel: Channel;
 
   @Column()
   username: string;
