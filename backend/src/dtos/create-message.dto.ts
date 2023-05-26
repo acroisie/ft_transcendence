@@ -9,10 +9,8 @@ export class CreateMessageDto {
   username: string;
 
   @Expose()
-  @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
-  room: string;
+  room: number;
 
   @Expose()
   @IsString()
