@@ -1,5 +1,6 @@
 import { OnModuleInit, BadRequestException, Logger } from '@nestjs/common';
 import {
+  ConnectedSocket,
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
@@ -51,35 +52,24 @@ export class GatewayService implements OnModuleInit {
       await this.validateDto(dto);
       const message = this.createMessage(dto);
       await this.messageRepo.save(message);
-      this.emitNewMessageEvent(body);
+      this.emitNewMessageEvent(dto);
     } catch (error) {
       this.handleValidationError(error);
     }
   }
 
-  private async validateDto(dto: CreateMessageDto | CreateChannelDto) {
-    const errors = await validate(dto);
-
-    if (errors.length > 0) {
-      const errorMessages = errors.map((error) =>
-        Object.values(error.constraints),
-      );
-      throw new BadRequestException(errorMessages);
-    }
-  }
-
   private createMessage(dto: CreateMessageDto): Message {
     return this.messageRepo.create({
-      roomId: dto.room,
+      roomId: dto.roomId,
       username: dto.username,
       content: dto.content,
     });
   }
-  
-  private emitNewMessageEvent(body: CreateMessageDto): void {
-    this.io.emit('onMessage', {
+
+  private emitNewMessageEvent(dto: CreateMessageDto): void {
+    this.io.to(`room-${dto.roomId}`).emit('onMessage', {
       msg: 'New message',
-      content: body.content,
+      content: dto.content,
     });
   }
 
@@ -113,6 +103,35 @@ export class GatewayService implements OnModuleInit {
       msg: 'New channel created',
       channelName: body.name,
     });
+  }
+
+  @SubscribeMessage('joinRoom')
+  onJoinRoom(@ConnectedSocket() socket: Socket, @MessageBody() roomId: number) {
+    socket.join(`room-${roomId}`);
+    this.logger.log(`id: ${socket.id} joined room-${roomId}`);
+    this.emitRoomHistory(socket, roomId);
+  }
+  
+  @SubscribeMessage('leaveRoom')
+  onLeaveRoom(socket: Socket, @MessageBody() roomId: number) {
+    socket.leave(`room-${roomId}`);
+    this.logger.log(`id: ${socket.id} left room-${roomId}`);
+  }
+
+  private async emitRoomHistory(socket: Socket, roomId: number) {
+    const history = await this.messageRepo.find({ where: { roomId: roomId } });
+    socket.emit('roomHistory', history);
+  }
+
+  private async validateDto(dto: CreateMessageDto | CreateChannelDto) {
+    const errors = await validate(dto);
+
+    if (errors.length > 0) {
+      const errorMessages = errors.map((error) =>
+        Object.values(error.constraints),
+      );
+      throw new BadRequestException(errorMessages);
+    }
   }
 
   private handleValidationError(error: any): void {

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsNumber } from 'class-validator';
 import { Expose } from 'class-transformer';
 
 export class CreateMessageDto {
@@ -9,8 +9,9 @@ export class CreateMessageDto {
   username: string;
 
   @Expose()
+  @IsNumber()
   @IsNotEmpty()
-  room: number;
+  roomId: number;
 
   @Expose()
   @IsString()
